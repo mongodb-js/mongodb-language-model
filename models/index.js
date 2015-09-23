@@ -13,6 +13,7 @@ module.exports = {
   LeafValue: require('./leafvalue'),
   ValueOperator: require('./valueop'),
   ListOperator: require('./listop'),
+  GeoOperator: require('./geoop'),
   Operator: require('./operator'),
   OperatorObject: require('./opobject'),
 };

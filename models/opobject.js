@@ -12,6 +12,7 @@ var Operator = require('./operator'),
 var OperatorCollection = ChildCollection.extend({
   mainIndex: 'operator',
   model: function(attrs, options) {
+    var GeoOperator = require('./geo').GeoOperator;
     var key = _.keys(attrs)[0];
     var value = attrs[key];
 

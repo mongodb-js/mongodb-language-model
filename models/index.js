@@ -13,7 +13,9 @@ module.exports = {
   LeafValue: require('./leafvalue'),
   ValueOperator: require('./valueop'),
   ListOperator: require('./listop'),
-  GeoOperator: require('./geoop'),
+  GeoOperator: require('./geo').GeoOperator,
+  LegacyShape: require('./geo').LegacyShape,
+  Geometry: require('./geo').Geometry,
   Operator: require('./operator'),
   OperatorObject: require('./opobject'),
 };

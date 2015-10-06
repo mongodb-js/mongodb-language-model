@@ -3,5 +3,5 @@ var definitions = module.exports = {
   listOperators: ['$in', '$nin', '$elemMatch'],
   valueOperators: ['$gt', '$gte', '$lt', '$lte', '$exists', '$type', '$size', '$eq', '$ne', '$not'],
   geoOperators: ['$geoWithin'],
-  geoShapeOperators: ['$center', '$centerSphere', '$box', '$polygon']
+  geoWithinShapeOperators: ['$center', '$centerSphere', '$box', '$polygon', '$geometry']
 };

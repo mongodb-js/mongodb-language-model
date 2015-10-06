@@ -150,7 +150,7 @@ describe('OperatorObject', function() {
     assert.equal(opob.operators.get('$foo'), undefined);
   });
 
-  it('should parse a $geoWithin query correctly', function() {
+    it('should parse a $geoWithin query correctly', function() {
     opob = new models.OperatorObject({
       $geoWithin: {
         $centerSphere: [ [ -88, 30 ], 10/3963.2 ]

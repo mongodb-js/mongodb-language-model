@@ -19,7 +19,7 @@ module.exports = Clause.extend({
   props: {
     value: {
       type: 'any',
-      default: null
+      default: undefined
     }
   },
   session: {
@@ -77,7 +77,7 @@ module.exports = Clause.extend({
   },
   initialize: function(attrs, options) {
     // initialize value manually (since it is polymorphic)
-    if (this.value) {
+    if (this.value !== undefined) {
       this.value = this._initializeValue(this.value, options);
     } else {
       // if no attrs given use a null LeafValue as placeholder

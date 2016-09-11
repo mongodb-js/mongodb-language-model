@@ -50,13 +50,20 @@ operator_object
     { return { pos: "operator-object", operators: operators }; }
 
 operator
+  // value-operator
   = quotation_mark operator:value_operator quotation_mark name_separator value:JSON
   { return { pos: "value-operator", operator: operator, value: value }; }
+  // list-operator
   / quotation_mark operator:list_operator quotation_mark name_separator begin_array values:leaf_value_list end_array
   { return { pos: "list-operator", operator: operator, values: values }; }
-
+  // elemmatch-expression-operator
+  / quotation_mark "$elemMatch" quotation_mark name_separator expression:expression
+  { return { pos: "elemmatch-expression-operator", expression: expression } }
+  // elemmatch-operator-operator
+  / quotation_mark "$elemMatch" quotation_mark name_separator opobject:operator_object
+  { return { pos: "elemmatch-operator-operator", operators: opobject.operators } }
 value_operator
-  = "$gt" / "$gte" / "$lt" / "$lte" / "$eq" / "$ne" / "$type" / "$size" / "$regex" / "$exists"
+  = "$gte" / "$gt" / "$lte" / "$lt" / "$eq" / "$ne" / "$type" / "$size" / "$exists"
 
 list_operator
   = "$in" / "$nin"
@@ -117,6 +124,37 @@ leaf_value
   / array
   / number
   / string
+  / extended_json_value
+
+extended_json_value
+  = regex
+  // / timestamp
+  // / minkey
+  // / maxkey
+  // / objectid
+  // / long
+  // / binary
+  // / dbref
+  // / date
+  // / undefined
+
+regex
+  = begin_object
+  	members:(
+      regex:(
+      	quotation_mark "$regex" quotation_mark
+        name_separator string:string
+        { return string; }
+      )
+      options:(
+        value_separator quotation_mark "$options" quotation_mark
+        name_separator quotation_mark options:[gims]* quotation_mark
+        {return options.join(''); }
+      )?
+      { return {regex: regex, options: options ? options : ""}; }
+    )
+    end_object
+    { return members; }
 
 false = "false" { return false; }
 null  = "null"  { return null;  }

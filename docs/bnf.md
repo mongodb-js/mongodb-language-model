@@ -1,4 +1,4 @@
-# BNF for MongoDB Query Language
+# BNF for MongoDB Query Language 3.2
 
 ```
 <query> ::= <expression>
@@ -15,7 +15,12 @@
              <comment-clause>
 
 <text-clause> ::= { <text-operator> : { <search-operator> : <string> } } |
-                  { <text-operator> : { <search-operator> : <string> , <language-operator> : <language> } }
+                  { <text-operator> : {
+                      <search-operator> : <string> ,
+                      <language-operator> : <string>,
+                      <case-sensitive-operator> : <boolean>,
+                      <diacritic-sensitive-operator> : <boolean> } }
+
 
 <where-clause> ::= { <where-operator> : <string> } |
                    { <where-operator> : <function> }
@@ -54,7 +59,6 @@
                      <ne-operator> |
                      <type-operator> |
                      <size-operator> |
-                     <regex-operator> |
                      <exists-operator>
 
 <array-operator> ::= <in-operator> |
@@ -64,8 +68,41 @@
                     <and-operator> |
                     <nor-operator>
 
-<leaf-value> ::= <string> | <number> | <date> | <boolean> | <date> | <min-key> | <max-key> |
-                 <null> | <regex> | <function> | <binary> | <document> | <array>
+<text-operator> ::= "$text"
+
+<search-operator> ::= "$search"
+
+<language-operator> ::= "$language"
+
+<case-sensitive-operator> ::= "$caseSensitive"
+
+<diacritic-sensitive-operator> ::= "$diacriticSensitive"
+
+<gt-operator> ::= "$gt"
+
+<gte-operator> ::= "$gte"
+
+<lt-operator> ::= "$lt"
+
+<lte-operator> ::= "$lte"
+
+<eq-operator> ::= "$eq"
+
+<ne-operator> ::= "$ne"
+
+<type-operator> ::= "$type"
+
+<size-operator> ::= "$size"
+
+<exists-operator> ::= "$exists"
+
+<where-operator> ::= "$where"
+
+<leaf-value> ::=  <double> | <string> | <object> | <array> | <binary> | <undefined> |
+                  <object-id> | <boolean> | <date> | <null> | <regex> | <db-pointer> |
+                  <javascript> | <symbol> | <javascript-with-scope> | <integer> |
+                  <timestamp> | <long> | <min-key> | <max-key>
+
 
 <document> ::= { <member-list> }
 

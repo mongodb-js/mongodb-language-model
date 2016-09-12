@@ -2,20 +2,42 @@ query
   = expression
 
 expression
-  = begin_object
-  	clauses:(
+  = begin_object clauses:clause_list end_object
+    { return { pos: "expression", clauses: clauses !== null ? clauses : [] }; }
+
+clause_list
+  = (
       head:clause tail:(value_separator c:clause { return c; })*
       { return [head].concat(tail); }
     )?
-    end_object
-    { return { pos: "expression", clauses: clauses !== null ? clauses : [] }; }
 
 clause
   = leaf_clause
   / expression_tree_clause
-  // / WhereClause
-  // / TextClause
-  // / CommentClause
+  / where_clause
+  // / text_clause
+  // / comment_clause
+
+where_clause
+  = quotation_mark where_operator quotation_mark name_separator value:string
+  { return {pos: "where-clause", type: "string", value: value }; }
+  // don't support this until the "function" form has a strict extended json representation
+  // / begin_object quotation_mark where_operator quotation_mark name_separator function end_object
+
+// text_clause
+//   = quotation_mark text_operator quotation_mark name_separator text_options:text_options
+//     {
+//       return { pos: "text-clause", search: text_options.search };
+//     }
+// text_options
+//   = begin_object quotation_mark search_operator quotation_mark name_separator search:string (value_separator text_options_optional)? end_object
+//     { return {search: search}; }
+//
+// text_options_optional
+//   = (
+//     quotation_mark language_operator quotation_mark name_separator language:string
+//     { return {language: language }; }
+//   )*
 
 expression_tree_clause
   = quotation_mark operator:expression_tree_operator quotation_mark name_separator begin_array expressions:expression_list end_array
@@ -62,11 +84,92 @@ operator
   // elemmatch-operator-operator
   / quotation_mark "$elemMatch" quotation_mark name_separator opobject:operator_object
   { return { pos: "elemmatch-operator-operator", operators: opobject.operators } }
+  // geo-operator
+  / quotation_mark "$geoWithin" quotation_mark name_separator shape:shape
+  { return { pos: "geo-within-operator", operator: "$geoWithin", shape: shape }; }
+
+shape
+  = geometry
+  / legacy_shape
+
+geometry
+  = begin_object
+    quotation_mark "$geometry" quotation_mark name_separator json:$ JSON  // @todo replace with GeoJSON
+    end_object
+    { return {"$geometry": JSON.parse(json) }; }
+
+legacy_shape
+  = center_shape
+  / polygon_shape
+  / box_shape
+
+center_shape
+  = begin_object
+    quotation_mark center_operator:("$centerSphere" / "$center") quotation_mark name_separator
+    parameters:$(begin_array
+    	begin_array
+    		number value_separator number
+        end_array
+        value_separator
+        number
+    end_array)
+    end_object
+    {
+      var res = {};
+      res[center_operator] = JSON.parse(parameters);
+      return res;
+    }
+
+box_shape
+  = begin_object
+    quotation_mark "$box" quotation_mark name_separator
+    parameters:$(begin_array
+    	begin_array
+    	    number value_separator number
+        end_array
+        value_separator
+        begin_array
+            number value_separator number
+		end_array
+    end_array)
+    end_object
+    { return {"$box": JSON.parse(parameters)}; }
+
+
+polygon_shape
+  = begin_object
+    quotation_mark "$polygon" quotation_mark name_separator
+    parameters:$(begin_array
+    	head:(begin_array
+    	    number value_separator number
+        end_array)
+        tail:(value_separator
+        begin_array
+            number value_separator number
+		end_array)*
+    end_array
+    { return [head].concat(tail); })
+    end_object
+    { return {"$polygon": JSON.parse(parameters)}; }
+
+
 value_operator
   = "$gte" / "$gt" / "$lte" / "$lt" / "$eq" / "$ne" / "$type" / "$size" / "$exists"
 
 list_operator
   = "$in" / "$nin"
+
+where_operator = "$where"
+
+text_operator = "$text"
+
+search_operator = "$search"
+
+language_operator = "$language"
+
+case_sensitive_operator = "$caseSensitive"
+
+diacritic_sensitive_operator = "$diacriticSensitive"
 
 leaf_value_list
   = values:(

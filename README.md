@@ -5,33 +5,69 @@
 Parses a MongoDB query and creates an abstract syntax tree (AST) with part of speech
 tagging.
 
+## Usage
+
+The main module exposes two functions: `accepts(queryStr)` and `parse(queryStr)`.
+
+#### `accepts(queryStr)`
+
+The `accepts(queryStr)` function takes a query string and returns `true` if the
+string is a valid MongoDB query, `false` otherwise.
+
+Example:
+
+```javascript
+var accepts = require('mongodb-language-model').accepts;
+var assert = require('assert');
+
+assert.ok(accepts('{"foo": 1}'));
+assert.ok(accepts('{"age": {"$gt": 35}}'));
+assert.ok(accepts('{"$or": [{"email": {"$exists": true}}, {"phone": {"$exists": true}}]}'));
+
+assert.equal(accepts('{"$invalid": "key"}'), false);
+```
+
+#### `parse(queryStr)`
+
+The `parse(queryStr)` function takes a query string and returns an abstract
+syntax tree (AST) as a javascript object, if the query is valid. If the
+query is not valid, the function throws a `pegjs.SyntaxError` with a message
+explaining the failure.
+
+Example:
+
+```javascript
+var parse = require('mongodb-language-model').parse;
+var assert = require('assert');
+var pegjs = require('pegjs');
+
+var ast = parse('{"foo": "bar"}');
+assert.deepEqual(ast, {
+  'pos': 'expression',
+  'clauses': [
+    {
+      'pos': 'leaf-clause',
+      'key': 'foo',
+      'value': {
+        'pos': 'leaf-value',
+        'value': 'bar'
+      }
+    }
+  ]
+});
+```
+
 ## UML diagram
 
 This is the hierarchical model that is created when a query is parsed:
 
 ![](./docs/query_language_uml.png)
 
-## Example
 
-```javascript
-var LanguageModel = require('mongodb-language-model');
-var assert = require('assert');
-
-var language = new LanguageModel();
-
-assert.ok(language.accepts({"foo": 1}));
-assert.ok(language.accepts({"age": {"$gt": 35}}));
-assert.ok(language.accepts({"$or": [{"email": {"$exists": true}},
-                                    {"phone": {"$exists": true}}]}));
-
-assert.equal(language.accepts({"$invalid": "key"}), false);
-
-```
 
 ## Installation
 
 ```
-// @todo
 npm install --save mongodb-language-model
 ```
 

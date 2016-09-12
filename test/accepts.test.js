@@ -1,18 +1,17 @@
-var LanguageModel = require('../');
+var language = require('../');
 var assert = require('assert');
 
-var languageModel = new LanguageModel();
 function accepts(str) {
-  assert.ok(languageModel.accepts(str));
+  assert.ok(language.accepts(str));
 }
 
 function rejects(str) {
-  assert.ok(!languageModel.accepts(str));
+  assert.ok(!language.accepts(str));
 }
 
-describe('LanguageModel', function() {
+describe('accepts', function() {
   it('should be requireable', function() {
-    assert.ok(LanguageModel);
+    assert.ok(language);
   });
 
   describe('General Acceptance', function() {

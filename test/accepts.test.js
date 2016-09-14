@@ -280,6 +280,16 @@ describe('accepts', function() {
     });
   });
 
+  describe('Where Clauses', function() {
+    it('should accept a single $where clause with a string value', function() {
+      accepts('{"$where": "this.age > 60;"}');
+    });
+
+    it('should accept a $where clause combined with a leaf-clause', function() {
+      accepts('{"$where": "this.age > 60;", "membership_status": "ACTIVE"}');
+    });
+  });
+
   describe('Syntax Errors', function() {
     it('should reject an invalid string', function() {
       rejects('{"foo": bar}');

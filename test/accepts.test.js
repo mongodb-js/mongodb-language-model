@@ -169,6 +169,11 @@ describe('accepts', function() {
       accepts('{"foo": {"$nin": []}}');
       accepts('{"foo": {"$nin": ["a", null, false, 4.35]}}');
     });
+
+    it('should accept $all operator', function() {
+      accepts('{"tags":{"$all":["ssl","security"]}}');
+      accepts('{"tags":{"$all":[["ssl","security"]]}}');
+    });
   });
 
   describe('$elemMatch operator', function() {

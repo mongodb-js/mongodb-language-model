@@ -161,7 +161,7 @@ value_operator
   = "$gte" / "$gt" / "$lte" / "$lt" / "$eq" / "$ne" / "$type" / "$size" / "$exists"
 
 list_operator
-  = "$in" / "$nin"
+  = "$in" / "$nin" / "$all"
 
 where_operator = "$where"
 

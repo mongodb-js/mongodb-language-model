@@ -8,8 +8,8 @@ describe('parse', function() {
   });
 
   it('should return AST of a simple valid query', function() {
-    var result = parse('{"foo": "bar"}');
-    assert.deepEqual(result, {
+    var ast = parse('{"foo": "bar"}');
+    assert.deepEqual(ast, {
       'pos': 'expression',
       'clauses': [
         {

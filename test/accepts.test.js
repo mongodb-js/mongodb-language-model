@@ -53,6 +53,63 @@ describe('accepts', function() {
     it('should reject a regular expression with invalid options', function() {
       rejects('{"foo": {"$regex": "^bar", "$options": "uvw"}}');
     });
+
+    it('should accept ObjectIds', function() {
+      accepts('{"_id": {"$oid": "57d64ffce97e2f2f90f37ccd"}}');
+    });
+
+    it('should reject ObjectIds with invalid id length', function() {
+      rejects('{"_id": {"$oid": "5f37ccd"}}');
+    });
+
+    it('should accept Undefined', function() {
+      accepts('{"_id": {"$undefined": true}}');
+    });
+
+    it('should accept MinKey', function() {
+      accepts('{"lower": {"$minKey": 1}}');
+    });
+
+    it('should accept MaxKey', function() {
+      accepts('{"upper": {"$maxKey": 1}}');
+    });
+
+    it('should accept NumberLong values', function() {
+      accepts('{"epoch": {"$numberLong": "12345678901234567890"}}');
+    });
+
+    it('should reject NumberLong values that are unquoted', function() {
+      rejects('{"epoch": {"$numberLong": 1234567890}}');
+    });
+
+    it('should accept Timestamp values', function() {
+      accepts('{"ts": {"$timestamp": {"t": 5, "i": 0}}}');
+    });
+
+    it('should reject incomplete Timestamp values', function() {
+      rejects('{"ts": {"$timestamp": {"t": 5}}}');
+      rejects('{"ts": {"$timestamp": {"i": 5}}}');
+    });
+
+    it('should accept Dates in ISO-8601 form', function() {
+      accepts('{"_id": {"$date": "1978-09-29T03:04:05.006Z"}}');
+    });
+
+    it('should accept Dates in $numberLong form', function() {
+      accepts('{"_id": {"$date": {"$numberLong": "1473838623000"}}}');
+    });
+
+    it('should accept Binary values', function() {
+      accepts('{"payload": {"$binary": "1234==", "$type": "3"}}');
+    });
+
+    it('should reject Binary values without a type', function() {
+      rejects('{"payload": {"$binary": "1234=="}}');
+    });
+
+    it('should accept DBRef values', function() {
+      accepts('{"link": {"$ref": "foo.bar", "$id": {"$oid": "57d64ffce97e2f2f90f37ccd"}}}');
+    });
   });
 
   describe('Value Operators', function() {

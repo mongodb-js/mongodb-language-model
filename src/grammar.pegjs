@@ -1,3 +1,4 @@
+/* --- General Query Structure and Logical Expression Trees --- */
 query
   = expression
 
@@ -17,12 +18,6 @@ clause
   / where_clause
   // / text_clause
   // / comment_clause
-
-where_clause
-  = quotation_mark where_operator quotation_mark name_separator value:string
-  { return {pos: "where-clause", type: "string", value: value }; }
-  // don't support this until the "function" form has a strict extended json representation
-  // / begin_object quotation_mark where_operator quotation_mark name_separator function end_object
 
 // text_clause
 //   = quotation_mark text_operator quotation_mark name_separator text_options:text_options
@@ -53,6 +48,9 @@ expression_list
     )?
     { return expressions !== null ? expressions : []; }
 
+where_clause
+  = quotation_mark where_operator quotation_mark name_separator value:string
+  { return {pos: "where-clause", type: "string", value: value }; }
 
 leaf_clause
   = key:key name_separator value:value
@@ -62,14 +60,17 @@ value
   = operator_object
   / JSON
 
+
+/* --- Operators --- */
+
 operator_object
-  = begin_object
-    operators:(
-      head:operator tail:(value_separator o:operator { return o; })*
-      { return [head].concat(tail); }
-    )
-    end_object
-    { return { pos: "operator-object", operators: operators }; }
+  = begin_object operators:operator_list end_object
+    { return { pos: "operator-object", operators: operators !== null ? operators : [] }; }
+
+operator_list
+  = head:operator
+    tail:(value_separator o:operator { return o; })*
+    { return [head].concat(tail); }
 
 operator
   // value-operator
@@ -87,6 +88,9 @@ operator
   // geo-operator
   / quotation_mark "$geoWithin" quotation_mark name_separator shape:shape
   { return { pos: "geo-within-operator", operator: "$geoWithin", shape: shape }; }
+
+
+/* --- Geo Operators --- */
 
 shape
   = geometry
@@ -178,12 +182,12 @@ leaf_value_list
     )?
     { return values !== null ? values : []; }
 
-key
-  = quotation_mark key:([^$] [^.\x00"]*) quotation_mark { return key[0] + key[1].join(''); }
-
 // field name limitations: https://docs.mongodb.com/manual/reference/limits/#Restrictions-on-Field-Names
 // no "." no null character and does not start with "$"
 // assuming at least 1 character
+key
+  = quotation_mark key:([^$] [^.\x00"]*) quotation_mark { return key[0] + key[1].join(''); }
+
 
 /*
  * JSON Grammar
@@ -229,19 +233,106 @@ leaf_value
   / string
   / extended_json_value
 
-extended_json_value
-  = regex
-  // / timestamp
-  // / minkey
-  // / maxkey
-  // / objectid
-  // / long
-  // / binary
-  // / dbref
-  // / date
-  // / undefined
+false = "false" { return false; }
+null  = "null"  { return null;  }
+true  = "true"  { return true;  }
 
-regex
+
+extended_json_value
+  = ejson_regex
+  / ejson_objectid
+  / ejson_minkey
+  / ejson_maxkey
+  / ejson_long
+  / ejson_date
+  / ejson_timestamp
+  / ejson_binary
+  / ejson_dbref
+  / ejson_undefined
+
+ejson_objectid
+  = begin_object
+    quotation_mark "$oid" quotation_mark
+    name_separator quotation_mark string:hexdig24 quotation_mark
+    end_object
+    { return {"$oid": string }; }
+
+hexdig24
+  = digits:(HEXDIG HEXDIG HEXDIG HEXDIG HEXDIG HEXDIG HEXDIG HEXDIG
+            HEXDIG HEXDIG HEXDIG HEXDIG HEXDIG HEXDIG HEXDIG HEXDIG
+            HEXDIG HEXDIG HEXDIG HEXDIG HEXDIG HEXDIG HEXDIG HEXDIG)
+    { return digits.join(''); }
+
+ejson_minkey
+  = begin_object
+    quotation_mark "$minKey" quotation_mark
+    name_separator ("1" / "true")
+    end_object
+    { return {"$minKey": 1 }; }
+
+ejson_maxkey
+  = begin_object
+    quotation_mark "$maxKey" quotation_mark
+    name_separator ("1" / "true")
+    end_object
+    { return {"$maxKey": 1 }; }
+
+ejson_long
+  = begin_object
+    quotation_mark "$numberLong" quotation_mark
+    name_separator quotation_mark digits:(DIGIT+) quotation_mark
+    end_object
+    { return {"$numberLong": digits.join('') }; }
+
+ejson_date
+  = begin_object
+    quotation_mark "$date" quotation_mark name_separator
+    date:(ejson_iso8601_date / ejson_numberlong_date)
+    end_object
+    { return {"$date": date }; }
+
+ejson_iso8601_date
+  = quotation_mark date:$(iso_date_time) quotation_mark
+    { return date; }
+
+ejson_numberlong_date
+  = ejson_long
+
+ejson_undefined
+  = begin_object
+    quotation_mark "$undefined" quotation_mark
+    name_separator "true"
+    end_object
+    { return {"$undefined": true }; }
+
+ejson_dbref
+  = begin_object
+  	members:(
+      ref:(
+      	quotation_mark "$ref" quotation_mark
+        name_separator string:string
+        { return string; }
+      )
+      id:(
+        value_separator quotation_mark "$id" quotation_mark
+        name_separator value:leaf_value
+        {return value; }
+      )
+      db:(
+        value_separator quotation_mark "$db" quotation_mark
+        name_separator string:string
+        {return string; }
+      )?
+      {
+        var result = {"$ref": ref, "$id": id};
+        if (db !== null) result["$db"] = db;
+      	return result;
+      }
+    )
+    end_object
+    { return members; }
+
+ejson_regex
   = begin_object
   	members:(
       regex:(
@@ -254,14 +345,40 @@ regex
         name_separator quotation_mark options:[gims]* quotation_mark
         {return options.join(''); }
       )?
-      { return {regex: regex, options: options ? options : ""}; }
+      { return {"$regex": regex, "$options": options ? options : ""}; }
     )
     end_object
     { return members; }
 
-false = "false" { return false; }
-null  = "null"  { return null;  }
-true  = "true"  { return true;  }
+ejson_binary
+  = begin_object
+  	members:(
+      binary:(
+      	quotation_mark "$binary" quotation_mark
+        name_separator string:string
+        { return string; }
+      )
+      type:(
+        value_separator quotation_mark "$type" quotation_mark
+        name_separator quotation_mark type:HEXDIG quotation_mark
+        {return type; }
+      )
+      { return {"$binary": binary, "$type": type}; }
+    )
+    end_object
+    { return members; }
+
+ejson_timestamp
+  = begin_object
+      quotation_mark "$timestamp" quotation_mark name_separator
+      object:(begin_object
+        quotation_mark "t" quotation_mark name_separator t:number value_separator
+        quotation_mark "i" quotation_mark name_separator i:number
+      end_object
+      { return {"t": t, "i": i}; })
+    end_object
+    { return {"$timestamp": object }; }
+
 
 /* ----- 4. Objects ----- */
 
@@ -342,3 +459,215 @@ unescaped      = [^\0-\x1F\x22\x5C]
 /* See RFC 4234, Appendix B (http://tools.ietf.org/html/rfc4627). */
 DIGIT  = [0-9]
 HEXDIG = [0-9a-f]i
+
+
+/*
+ * Data elements and interchange formats – Information interchange – Representation of dates and times
+ *
+ * https://en.wikipedia.org/wiki/ISO_8601
+ * http://tools.ietf.org/html/rfc3339
+ *
+ * @append ietf/rfc5234-core-abnf.pegjs
+ */
+
+ /* http://tools.ietf.org/html/rfc3339#appendix-A ISO 8601 Collected ABNF */
+ /* Date */
+ date_century
+   // 00-99
+   = $(DIGIT DIGIT)
+
+ date_decade
+   // 0-9
+   = DIGIT
+
+ date_subdecade
+   // 0-9
+   = DIGIT
+
+ date_year
+   = date_decade date_subdecade
+
+ date_fullyear
+   = date_century date_year
+
+ date_month
+   // 01-12
+   = $(DIGIT DIGIT)
+
+ date_wday
+   // 1-7
+   // 1 is Monday, 7 is Sunday
+   = DIGIT
+
+ date_mday
+   // 01-28, 01-29, 01-30, 01-31 based on
+   // month/year
+   = $(DIGIT DIGIT)
+
+ date_yday
+   // 001-365, 001-366 based on year
+   = $(DIGIT DIGIT DIGIT)
+
+ date_week
+   // 01-52, 01-53 based on year
+   = $(DIGIT DIGIT)
+
+ datepart_fullyear
+   = date_century? date_year "-"?
+
+ datepart_ptyear
+   = "-" (date_subdecade "-"?)?
+
+ datepart_wkyear
+   = datepart_ptyear
+   / datepart_fullyear
+
+ dateopt_century
+   = "-"
+   / date_century
+
+ dateopt_fullyear
+   = "-"
+   / datepart_fullyear
+
+ dateopt_year
+   = "-"
+   / date_year "-"?
+
+ dateopt_month
+   = "-"
+   / date_month "-"?
+
+ dateopt_week
+   = "-"
+   / date_week "-"?
+
+ datespec_full
+   = datepart_fullyear date_month "-"? date_mday
+
+ datespec_year
+   = date_century
+   / dateopt_century date_year
+
+ datespec_month
+   = "-" dateopt_year date_month ("-"? date_mday)
+
+ datespec_mday
+   = "--" dateopt_month date_mday
+
+ datespec_week
+   = datepart_wkyear "W" (date_week / dateopt_week date_wday)
+
+ datespec_wday
+   = "---" date_wday
+
+ datespec_yday
+   = dateopt_fullyear date_yday
+
+ date
+   = datespec_full
+   / datespec_year
+   / datespec_month
+   / datespec_mday
+   / datespec_week
+   / datespec_wday
+   / datespec_yday
+
+
+ /* Time */
+ time_hour
+   // 00-24
+   = $(DIGIT DIGIT)
+
+ time_minute
+   // 00-59
+   = $(DIGIT DIGIT)
+
+ time_second
+   // 00-58, 00-59, 00-60 based on
+   // leap-second rules
+   = $(DIGIT DIGIT)
+
+ time_fraction
+   = ("," / ".") $(DIGIT+)
+
+ time_numoffset
+   = ("+" / "-") time_hour (":"? time_minute)?
+
+ time_zone
+   = "Z"
+   / time_numoffset
+
+ timeopt_hour
+   = "-"
+   / time_hour ":"?
+
+ timeopt_minute
+   = "-"
+   / time_minute ":"?
+
+ timespec_hour
+   = time_hour (":"? time_minute (":"? time_second)?)?
+
+ timespec_minute
+   = timeopt_hour time_minute (":"? time_second)?
+
+ timespec_second
+   = "-" timeopt_minute time_second
+
+ timespec_base
+   = timespec_hour
+   / timespec_minute
+   / timespec_second
+
+ time
+   = timespec_base time_fraction? time_zone?
+
+ iso_date_time
+   = date "T" time
+
+
+ /* Durations */
+ dur_second
+   = DIGIT+ "S"
+
+ dur_minute
+   = DIGIT+ "M" dur_second?
+
+ dur_hour
+   = DIGIT+ "H" dur_minute?
+
+ dur_time
+   = "T" (dur_hour / dur_minute / dur_second)
+
+ dur_day
+   = DIGIT+ "D"
+ dur_week
+   = DIGIT+ "W"
+ dur_month
+   = DIGIT+ "M" dur_day?
+
+ dur_year
+   = DIGIT+ "Y" dur_month?
+
+ dur_date
+   = (dur_day / dur_month / dur_year) dur_time?
+
+ duration
+   = "P" (dur_date / dur_time / dur_week)
+
+
+ /* Periods */
+ period_explicit
+   = iso_date_time "/" iso_date_time
+
+ period_start
+   = iso_date_time "/" duration
+
+ period_end
+   = duration "/" iso_date_time
+
+ period
+   = period_explicit
+   / period_start
+   / period_end

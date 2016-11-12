@@ -82,6 +82,18 @@ describe('accepts', function() {
       rejects('{"epoch": {"$numberLong": 1234567890}}');
     });
 
+    it('should accept NumberDecimal values', function() {
+      accepts('{"epoch": {"$numberDecimal": "1.234"}}');
+    });
+
+    it('should reject empty NumberDecimal values', function() {
+      rejects('{"epoch": {"$numberDecimal": ""}}');
+    });
+
+    it('should reject NumberDecimal values that are unquoted', function() {
+      rejects('{"epoch": {"$numberDecimal": 1.234}}');
+    });
+
     it('should accept Timestamp values', function() {
       accepts('{"ts": {"$timestamp": {"t": 5, "i": 0}}}');
     });

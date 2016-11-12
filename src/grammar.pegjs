@@ -244,6 +244,7 @@ extended_json_value
   / ejson_minkey
   / ejson_maxkey
   / ejson_long
+  / ejson_decimal
   / ejson_date
   / ejson_timestamp
   / ejson_binary
@@ -283,6 +284,13 @@ ejson_long
     name_separator quotation_mark digits:(DIGIT+) quotation_mark
     end_object
     { return {"$numberLong": digits.join('') }; }
+
+ejson_decimal
+  = begin_object
+    quotation_mark "$numberDecimal" quotation_mark
+    name_separator number:(quotation_mark number quotation_mark)
+    end_object
+    { return {"$numberDecimal": number }; }
 
 ejson_date
   = begin_object

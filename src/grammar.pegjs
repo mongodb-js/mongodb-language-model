@@ -57,15 +57,24 @@ leaf_clause
     { return { pos: "leaf-clause", key: key, value: value }; }
 
 value
-  = operator_object
+  = operator_expression
   / JSON
 
 
 /* --- Operators --- */
 
-operator_object
+value_operator
+  = "$gte" / "$gt" / "$lte" / "$lt" / "$eq" / "$ne" / "$type" / "$size" / "$exists"
+
+list_operator
+  = "$in" / "$nin" / "$all"
+
+operator_expression_operator
+  = "$not" / "$elemMatch"
+
+operator_expression
   = begin_object operators:operator_list end_object
-    { return { pos: "operator-object", operators: operators !== null ? operators : [] }; }
+    { return { pos: "operator-expression", operators: operators !== null ? operators : [] }; }
 
 operator_list
   = head:operator
@@ -156,12 +165,6 @@ polygon_shape
     end_object
     { return {"$polygon": JSON.parse(parameters)}; }
 
-
-value_operator
-  = "$gte" / "$gt" / "$lte" / "$lt" / "$eq" / "$ne" / "$type" / "$size" / "$exists"
-
-list_operator
-  = "$in" / "$nin" / "$all"
 
 where_operator = "$where"
 

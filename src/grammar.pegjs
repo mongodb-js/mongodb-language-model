@@ -91,9 +91,9 @@ operator
   // elemmatch-expression-operator
   / quotation_mark "$elemMatch" quotation_mark name_separator expression:expression
   { return { pos: "elemmatch-expression-operator", expression: expression } }
-  // elemmatch-operator-operator
-  / quotation_mark "$elemMatch" quotation_mark name_separator opobject:operator_object
-  { return { pos: "elemmatch-operator-operator", operators: opobject.operators } }
+  // operator-expression-operator
+  / quotation_mark operator:operator_expression_operator quotation_mark name_separator opobject:operator_expression
+  { return { pos: "operator-expression-operator", operator: operator, operators: opobject.operators } }
   // geo-operator
   / quotation_mark "$geoWithin" quotation_mark name_separator shape:shape
   { return { pos: "geo-within-operator", operator: "$geoWithin", shape: shape }; }

@@ -206,6 +206,12 @@ describe('accepts', function() {
     it('should accept $elemMatch in its operator form', function() {
       accepts('{"results": {"$elemMatch": {"$gte": 8, "$lt": 20}}}');
     });
+    it('should reject $elemMatch in a top-level operator position', function() {
+      rejects('{"$elemMatch": {"name": {"$exists": true}}}');
+    });
+    it('should reject $not as a value-operator position', function() {
+      rejects('{"name": {"$elemMatch": true}}}');
+    });
     it('should accept $not with an operator object as its value', function() {
       accepts('{"names": {"$exists": true, "$not": {"$size": 0}}}');
     });

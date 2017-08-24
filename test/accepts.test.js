@@ -209,7 +209,7 @@ describe('accepts', function() {
     it('should reject $elemMatch in a top-level operator position', function() {
       rejects('{"$elemMatch": {"name": {"$exists": true}}}');
     });
-    it('should reject $not as a value-operator position', function() {
+    it('should reject $elemMatch in a value-operator position', function() {
       rejects('{"name": {"$elemMatch": true}}}');
     });
     it('should accept $not with an operator object as its value', function() {

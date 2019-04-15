@@ -679,6 +679,12 @@ describe('accepts', function() {
     });
   });
 
+  describe('Expressions as nested operator', function() {
+    it('should accept simple $expr operator', function() {
+      accepts('{"$and": [{"foo": 1}, {"$expr": {"$gt": ["$sold", "$total"]}}]}');
+    });
+  });
+
   describe('Logical Expression Trees', function() {
     it('should accept simple $and expressions', function() {
       accepts('{"$and": [{"foo": 1}, {"bar": 1}]}');

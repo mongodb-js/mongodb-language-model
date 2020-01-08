@@ -1,6 +1,5 @@
-.jshintrc
-.jsfmtrc
+.babelrc
+.eslintrc
 .travis.yml
-.zuul.yml
-examples/
+docs/
 test/

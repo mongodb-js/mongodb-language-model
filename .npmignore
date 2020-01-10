@@ -1,4 +1,4 @@
-.babelrc
+.eslintignore
 .eslintrc
 .travis.yml
 docs/

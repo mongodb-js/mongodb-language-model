@@ -191,7 +191,7 @@ geometry_point
       )*
     end_object
     {
-      var result = distance;
+      var result = distance || {};
       distance.$geometry = geometry;
       return result;
     }
